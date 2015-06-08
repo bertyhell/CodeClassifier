@@ -5,10 +5,10 @@ You provide a snippet and this c# library will tell you what language it was wri
 * ruby
 * shell
 * c
-* * c++
+* c++
 * coffee-script
 * csharp
-* * css
+* css
 * html
 * javascript
 * objective-c
