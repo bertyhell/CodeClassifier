@@ -46,9 +46,6 @@
     <Compile Include="StringTokenizer\StringTokenizer.cs" />
     <Compile Include="StringTokenizer\Token.cs" />
     <Compile Include="TokenNode.cs" />
-    <None Include="AvalonEdit\Templates\ICSharpCode.PythonBinding.Resources.Python.xshd">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
     <Content Include="training-set\csharp.cs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

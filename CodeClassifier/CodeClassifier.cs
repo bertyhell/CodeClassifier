@@ -12,7 +12,7 @@ namespace CodeClassifier
 		private static CodeClassifier _instance;
 
 		private const double SCORE_MULTIPLIER_PER_LEVEL = 2;
-		private const double SCORE_MULTIPLIER_FOR_EXACT_MATCH = 3;
+		private const double SCORE_MULTIPLIER_FOR_EXACT_MATCH = 5;
 
 		private static List<MatchTree> _matchTrees;
 
@@ -48,7 +48,7 @@ namespace CodeClassifier
 			// Recursivly build the tree
 			TokenNode root = new TokenNode(TokenKind.Unknown, 0, 1, null);
 			double totalScore = 0;
-			for (int index = 0; index < tokens.Count; index++)
+			for (int index = 0; index < tokens.Count-1; index++)
 			{
 				totalScore += AddTokens(root, tokens, index);
 			}
@@ -97,12 +97,21 @@ namespace CodeClassifier
 			return tokens;
 		}
 
-		public static string Classify(string snippet)
+		public static string Classify(string snippet  )
+		{
+			// ReSharper disable once RedundantAssignment
+			Dictionary<string, double> scores;
+			return Classify(snippet, out scores);
+		}
+
+		public static string Classify(string snippet, out Dictionary<string, double> scores  )
 		{
 			if (_instance == null)
 			{
 				_instance = new CodeClassifier();
 			}
+
+			scores = new Dictionary<string, double>();
 
 			List<Token> tokens = GetAllTokens(snippet);
 			double maxScore = 0;
@@ -116,7 +125,9 @@ namespace CodeClassifier
 					score += ScoreTokens(matchTree.MatchTreeRoot, tokens, index);
 				}
 				score = score / tokens.Count() / matchTree.TotalPossibleScore;
+
 				//Console.WriteLine(matchTree.Language + "\t" + score);
+				scores.Add(matchTree.Language, score);
 				if (score > maxScore)
 				{
 					maxScore = score;
@@ -134,8 +145,8 @@ namespace CodeClassifier
 			{
 				// Token exists in match tree => points !!!
 				double score = nextToken.Examples.Contains(codeToken.Value) ?
-									SCORE_MULTIPLIER_PER_LEVEL :
-									SCORE_MULTIPLIER_FOR_EXACT_MATCH;
+									SCORE_MULTIPLIER_FOR_EXACT_MATCH:
+									SCORE_MULTIPLIER_PER_LEVEL;
 
 				if (index < tokens.Count() - 1)
 				{

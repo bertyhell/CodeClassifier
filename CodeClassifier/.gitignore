@@ -1,0 +1,6 @@
+bin/
+obj/
+CodeClassifier.csproj.user
+CodeClassifier.v12.suo
+*.DotSettings
+*.user

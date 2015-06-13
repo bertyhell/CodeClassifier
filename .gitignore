@@ -1,4 +1,5 @@
-bin/
-obj/
-CodeClassifier.csproj.user
-CodeClassifier.v12.suo
+Test/bin/
+Test/obj/
+CodeClassifier.sln.DotSettings
+*.user
+*.suo
