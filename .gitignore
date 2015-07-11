@@ -3,3 +3,5 @@ Test/obj/
 CodeClassifier.sln.DotSettings
 *.user
 *.suo
+NaiveBayesClassifier/obj/
+NaiveBayesClassifier/bin/
