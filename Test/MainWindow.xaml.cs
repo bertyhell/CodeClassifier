@@ -46,25 +46,31 @@ namespace Test
 
 		private void ButtonClick(object sender, RoutedEventArgs e)
 		{
+			if (string.IsNullOrWhiteSpace(InputString))
+			{
+				MessageBox.Show("Please enter a code sniplet before continueing.");
+				return;
+			}
+
 			Dictionary<string, double> scores;
 			string bestLanguage = CodeClassifier.CodeClassifier.Classify(InputString, out scores);
-			//string languagesAndScores = "";
+			string languagesAndScores = "";
 
-			//KeyValuePair<string, double> maxLanguage = scores.Aggregate((l, r) => l.Value > r.Value ? l : r);
-			//KeyValuePair<string, double> minLanguage = scores.Aggregate((l, r) => l.Value < r.Value ? l : r);
-			//scores.Remove(maxLanguage.Key);
-			//KeyValuePair<string, double> secondLanguage = scores.Aggregate((l, r) => l.Value > r.Value ? l : r);
-			//scores.Add(maxLanguage.Key, maxLanguage.Value);
+			KeyValuePair<string, double> maxLanguage = scores.Aggregate((l, r) => l.Value > r.Value ? l : r);
+			KeyValuePair<string, double> minLanguage = scores.Aggregate((l, r) => l.Value < r.Value ? l : r);
+			scores.Remove(maxLanguage.Key);
+			KeyValuePair<string, double> secondLanguage = scores.Aggregate((l, r) => l.Value > r.Value ? l : r);
+			scores.Add(maxLanguage.Key, maxLanguage.Value);
 
-			//double scorePercentageDiff = Math.Round((maxLanguage.Value - secondLanguage.Value) / (maxLanguage.Value - minLanguage.Value) * 100, 2);
+			double scorePercentageDiff = Math.Round((maxLanguage.Value - secondLanguage.Value) / (maxLanguage.Value - minLanguage.Value) * 100, 2);
 
-			//foreach (KeyValuePair<string, double> keyValuePair in scores)
-			//{
-			//	languagesAndScores += keyValuePair.Key + "\t" + keyValuePair.Value + (keyValuePair.Key == bestLanguage ? "***" : "") + "\n";
-			//}
-			//OutputString = languagesAndScores + "\nDifference between first and runner-up: " + scorePercentageDiff + "%.";
+			foreach (KeyValuePair<string, double> keyValuePair in scores)
+			{
+				languagesAndScores += keyValuePair.Key + "\t" + keyValuePair.Value + (keyValuePair.Key == bestLanguage ? "***" : "") + "\n";
+			}
+			OutputString = languagesAndScores + "\nDifference between first and runner-up: " + scorePercentageDiff + "%.";
 
-			OutputString = bestLanguage;
+			//OutputString = bestLanguage;
 		}
 
 		public event PropertyChangedEventHandler PropertyChanged;

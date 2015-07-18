@@ -37,108 +37,105 @@ namespace CodeClassifier
 
 			// unique tokens list
 			_uniqueTokenSet = new HashSet<string>();
+			_matchTrees = new List<MatchTree>();
 
 			Dictionary<string, List<Dictionary<string, double>>> tokenFreqPerLanguage = new Dictionary<string, List<Dictionary<string, double>>>();
 
 			string[] folders = Directory.GetDirectories(path);
 			foreach (string languageFolder in folders)
 			{
-				Console.WriteLine("handling language: " + languageFolder);
+				//Console.WriteLine("handling language: " + languageFolder);
 				string[] files = Directory.GetFiles(languageFolder);
-				_matchTrees = new List<MatchTree>();
 				TokenNode rootNode = null;
 				double totalPossibleScore = 0;
+				string languageName = Path.GetFileNameWithoutExtension(languageFolder) ?? "undefined";
 
 				List<Dictionary<string, double>> tokenFreqPerFile = new List<Dictionary<string, double>>();
 
 				foreach (string filePath in files)
 				{
-					Console.WriteLine("\thandling file: " + Path.GetFileNameWithoutExtension(filePath));
+					//Console.WriteLine("\thandling file: " + Path.GetFileNameWithoutExtension(filePath));
 					string fileContent = File.ReadAllText(filePath);
 					List<Token> tokens = GetAllTokens(fileContent);
 
+
 					// Verhelst algo
-					string languageName = Path.GetFileNameWithoutExtension(filePath);
-					if (languageName != null)
+					// Calculate the total possible score to normalize the score results
+					if (rootNode == null)
 					{
-						// Calculate the total possible score to normalize the score results
-						if (rootNode == null)
-						{
-							rootNode = BuildMatchTree(tokens, 0, out totalPossibleScore, null);
-						}
-						else
-						{
-							rootNode = BuildMatchTree(tokens, totalPossibleScore, out totalPossibleScore, rootNode);
-						}
+						rootNode = BuildMatchTree(tokens, 0, out totalPossibleScore, null);
+					}
+					else
+					{
+						rootNode = BuildMatchTree(tokens, totalPossibleScore, out totalPossibleScore, rootNode);
 					}
 
 					//// Train Bayes Hellinger Classifier
-					//tokenFreqPerFile.Add(BuildFrequencyTable(tokens));
+					tokenFreqPerFile.Add(BuildFrequencyTable(tokens));
 				}
 
 
-				_matchTrees.Add(new MatchTree(rootNode, languageFolder, totalPossibleScore));
+				_matchTrees.Add(new MatchTree(rootNode, languageName, totalPossibleScore));
 
-				tokenFreqPerLanguage.Add(languageFolder, tokenFreqPerFile);
+				tokenFreqPerLanguage.Add(languageName, tokenFreqPerFile);
 			}
 
-			//DataTable bayesMatchTable = new DataTable();
-			//bayesMatchTable.Columns.Add("blablablabla"); // Must be different from any token in any snipplet :( => will fail some of the time :p
-			//foreach (string uniqueToken in _uniqueTokenSet)
-			//{
-			//	bayesMatchTable.Columns.Add(uniqueToken, typeof(double));
-			//}
+			DataTable bayesMatchTable = new DataTable();
+			bayesMatchTable.Columns.Add("blablablabla"); // Must be different from any token in any snipplet :( => will fail some of the time :p
+			foreach (string uniqueToken in _uniqueTokenSet)
+			{
+				bayesMatchTable.Columns.Add(uniqueToken, typeof(double));
+			}
 
 
-			//Console.WriteLine("finished calculating freq tables----------------------------------");
+			Console.WriteLine("finished calculating freq tables----------------------------------");
 
-			////TODO Remove tokens that are longer than 20 chars
+			//TODO Remove tokens that are longer than 20 chars
 
-			//// Optimize freq tables => only use most used tokens
+			// Optimize freq tables => only use most used tokens
 
 
-			////training data.
-			//_uniqueTokenList = _uniqueTokenSet.ToList();
-			//foreach (string language in tokenFreqPerLanguage.Keys)
-			//{
+			//training data.
+			_uniqueTokenList = _uniqueTokenSet.ToList();
+			foreach (string language in tokenFreqPerLanguage.Keys)
+			{
 
-			//	foreach (Dictionary<string, double> tokenFreq in tokenFreqPerLanguage[language])
-			//	{
-			//		object[] rowValues = new object[_uniqueTokenList.Count + 1];
-			//		rowValues[0] = language;
-			//		Console.WriteLine(language);
-			//		for (int i = 0; i < _uniqueTokenList.Count; i++)
-			//		{
-			//			if (tokenFreq.ContainsKey(_uniqueTokenList[i]))
-			//			{
-			//				rowValues[i + 1] = tokenFreq[_uniqueTokenList[i]];
-			//			}
-			//			else
-			//			{
-			//				rowValues[i + 1] = 0;
-			//			}
-			//		}
-			//		bayesMatchTable.Rows.Add(rowValues);
-			//	}
-			//}
+				foreach (Dictionary<string, double> tokenFreq in tokenFreqPerLanguage[language])
+				{
+					object[] rowValues = new object[_uniqueTokenList.Count + 1];
+					rowValues[0] = language;
+					Console.WriteLine(language);
+					for (int i = 0; i < _uniqueTokenList.Count; i++)
+					{
+						if (tokenFreq.ContainsKey(_uniqueTokenList[i]))
+						{
+							rowValues[i + 1] = tokenFreq[_uniqueTokenList[i]];
+						}
+						else
+						{
+							rowValues[i + 1] = 0;
+						}
+					}
+					bayesMatchTable.Rows.Add(rowValues);
+				}
+			}
 
-			//_bayesClassifier = new Classifier();
+			_bayesClassifier = new Classifier();
 
-			//Console.WriteLine("training classifier----------------------------------");
+			Console.WriteLine("training classifier----------------------------------");
 
-			//_bayesClassifier.TrainClassifier(bayesMatchTable);
+			_bayesClassifier.TrainClassifier(bayesMatchTable);
 
-			//Console.WriteLine("finished training classifier----------------------------------");
+			Console.WriteLine("finished training classifier----------------------------------");
 		}
 
 		private static Dictionary<string, double> BuildFrequencyTable(List<Token> tokens)
 		{
-
 			Dictionary<string, double> tokenFrequencies = new Dictionary<string, double>();
 			foreach (Token token in tokens)
 			{
 				// Variablenames do not contribute much to the freq table signature of a language
-				if (token.Kind != TokenKind.DoubleQuotedString && token.Kind != TokenKind.SingleQuotedString)
+				if (token.Kind != TokenKind.DoubleQuotedString && token.Kind != TokenKind.SingleQuotedString && token.Value.Length < 10)
 				{
 					if (tokenFrequencies.ContainsKey(token.Value))
 					{
@@ -241,9 +238,32 @@ namespace CodeClassifier
 				_instance = new CodeClassifier();
 			}
 
-			//return ClassifyByTokenProbability(snippet, out scores);
+			string bestLanguageTp = ClassifyByTokenProbability(snippet, out scores);
+			OutputLanguageScores(scores, bestLanguageTp);
 
-			return ClassifyByMatchTrees(snippet, out scores);
+			string bestLanguageMt = ClassifyByMatchTrees(snippet, out scores);
+			OutputLanguageScores(scores, bestLanguageMt);
+
+			return bestLanguageMt;
+		}
+
+		private static void OutputLanguageScores(Dictionary<string, double> scores, string bestLanguage)
+		{
+			string languagesAndScores = "";
+
+			KeyValuePair<string, double> maxLanguage = scores.Aggregate((l, r) => l.Value > r.Value ? l : r);
+			KeyValuePair<string, double> minLanguage = scores.Aggregate((l, r) => l.Value < r.Value ? l : r);
+			scores.Remove(maxLanguage.Key);
+			KeyValuePair<string, double> secondLanguage = scores.Aggregate((l, r) => l.Value > r.Value ? l : r);
+			scores.Add(maxLanguage.Key, maxLanguage.Value);
+
+			double scorePercentageDiff = Math.Round((maxLanguage.Value - secondLanguage.Value) / (maxLanguage.Value - minLanguage.Value) * 100, 2);
+
+			foreach (KeyValuePair<string, double> keyValuePair in scores)
+			{
+				languagesAndScores += keyValuePair.Key + "\t" + keyValuePair.Value + (keyValuePair.Key == bestLanguage ? "***" : "") + "\n";
+			}
+			Console.WriteLine(languagesAndScores + "\nDifference between first and runner-up: " + scorePercentageDiff + "%.");
 		}
 
 		private static string ClassifyByTokenProbability(string snippet, out Dictionary<string, double> scores)
@@ -262,13 +282,11 @@ namespace CodeClassifier
 					rowValues[i] = 0;
 				}
 			}
-			scores = new Dictionary<string, double>();
-			return _bayesClassifier.Classify(rowValues);
+			return _bayesClassifier.Classify(rowValues, out scores);
 		}
 
 		private static string ClassifyByMatchTrees(string snippet, out Dictionary<string, double> scores)
 		{
-
 			scores = new Dictionary<string, double>();
 
 			List<Token> tokens = GetAllTokens(snippet);
@@ -284,7 +302,7 @@ namespace CodeClassifier
 				}
 				score = score / tokens.Count() / matchTree.TotalPossibleScore;
 
-				//Console.WriteLine(matchTree.Language + "\t" + score);
+				Console.WriteLine(matchTree.Language + "\t" + score);
 				scores.Add(matchTree.Language, score);
 				if (score > maxScore)
 				{

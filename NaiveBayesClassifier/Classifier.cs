@@ -64,9 +64,9 @@ namespace ProbabilityFunctions
 			}
 		}
 
-		public string Classify(double[] obj)
+		public string Classify(double[] obj, out Dictionary<string, double> scores)
 		{
-			Dictionary<string, double> score = new Dictionary<string, double>();
+			scores = new Dictionary<string, double>();
 
 			var results = (from myRow in dataSet.Tables[0].AsEnumerable()
 						   group myRow by myRow.Field<string>(dataSet.Tables[0].Columns[0].ColumnName) into g
@@ -81,7 +81,7 @@ namespace ProbabilityFunctions
 					double mean = Convert.ToDouble(dataSet.Tables["Gaussian"].Rows[i][a]);
 					double variance = Convert.ToDouble(dataSet.Tables["Gaussian"].Rows[i][++a]);
 					double result = Helper.NormalDist(obj[b - 1], mean, Helper.SquareRoot(variance));
-					if (!Double.IsNaN(result))
+					if (!Double.IsNaN(result) && !Double.IsInfinity(result) && result != 0)
 					{
 						// if number add to scores
 						subScoreList.Add(result);
@@ -89,23 +89,21 @@ namespace ProbabilityFunctions
 					a++; b++;
 				}
 
-				double finalScore = 0;
-				foreach (double subScore in subScoreList)
+				double finalScore = subScoreList[0];
+				for (int k = 1; k < subScoreList.Count; k++)
 				{
+					finalScore = finalScore * subScoreList[k];
 					if (finalScore == 0)
 					{
-						finalScore = subScore;
-						continue;
+						break; // No point in going further
 					}
-
-					finalScore = finalScore * subScore;
 				}
 
-				score.Add(results[i].Name, finalScore * 0.5);
+				scores.Add(results[i].Name, finalScore * 0.5);
 			}
 
-			double maxOne = score.Max(c => c.Value);
-			var name = (from c in score
+			double maxOne = scores.Max(c => c.Value);
+			var name = (from c in scores
 						where c.Value == maxOne
 						select c.Key).First();
 
