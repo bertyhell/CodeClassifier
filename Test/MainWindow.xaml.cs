@@ -8,10 +8,7 @@ using Test.Annotations;
 
 namespace Test
 {
-	/// <summary>
-	/// Interaction logic for MainWindow.xaml
-	/// </summary>
-	public partial class MainWindow : Window, INotifyPropertyChanged
+	public partial class MainWindow : INotifyPropertyChanged
 	{
 		private string _inputString;
 		private string _outputString;
@@ -52,8 +49,9 @@ namespace Test
 				return;
 			}
 
-			Dictionary<string, double> scores;
-			string bestLanguage = CodeClassifier.CodeClassifier.Classify(InputString, out scores);
+		    double certainty;
+            Dictionary<string, double> scores;
+			string bestLanguage = CodeClassifier.CodeClassifier.Classify(InputString, out certainty, out scores);
 			string languagesAndScores = "";
 
 			KeyValuePair<string, double> maxLanguage = scores.Aggregate((l, r) => l.Value > r.Value ? l : r);
@@ -66,11 +64,9 @@ namespace Test
 
 			foreach (KeyValuePair<string, double> keyValuePair in scores)
 			{
-				languagesAndScores += keyValuePair.Key + "\t" + keyValuePair.Value + (keyValuePair.Key == bestLanguage ? "***" : "") + "\n";
+				languagesAndScores += keyValuePair.Key + "\t" + keyValuePair.Value + (keyValuePair.Key == bestLanguage ? " certainty: " + Math.Round(certainty*100, 0) : "") + "\n";
 			}
 			OutputString = languagesAndScores + "\nDifference between first and runner-up: " + scorePercentageDiff + "%.";
-
-			//OutputString = bestLanguage;
 		}
 
 		public event PropertyChangedEventHandler PropertyChanged;
@@ -79,7 +75,7 @@ namespace Test
 		protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
 		{
 			PropertyChangedEventHandler handler = PropertyChanged;
-			if (handler != null) handler(this, new PropertyChangedEventArgs(propertyName));
+		    handler?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 		}
 	}
 }

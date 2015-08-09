@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Data;
+using System.Linq.Expressions;
 
 namespace ProbabilityFunctions
 {
@@ -66,14 +67,18 @@ namespace ProbabilityFunctions
 
 		public string Classify(double[] obj, out Dictionary<string, double> scores)
 		{
-			scores = new Dictionary<string, double>();
 
 			var results = (from myRow in dataSet.Tables[0].AsEnumerable()
 						   group myRow by myRow.Field<string>(dataSet.Tables[0].Columns[0].ColumnName) into g
 						   select new { Name = g.Key, Count = g.Count() }).ToList();
 
+
+			scores = new Dictionary<string, double>();
+			int[] scoreAdjustments = new int[results.Count];
+
 			for (int i = 0; i < results.Count; i++)
 			{
+				scoreAdjustments[i] = 0;
 				List<double> subScoreList = new List<double>();
 				int a = 1, b = 1;
 				for (int k = 1; k < dataSet.Tables["Gaussian"].Columns.Count; k = k + 2)
@@ -89,17 +94,39 @@ namespace ProbabilityFunctions
 					a++; b++;
 				}
 
-				double finalScore = subScoreList[0];
-				for (int k = 1; k < subScoreList.Count; k++)
+				double finalScore = 1;
+				foreach (double subScore in subScoreList)
 				{
-					finalScore = finalScore * subScoreList[k];
-					if (finalScore == 0)
+					double nextScore = finalScore * subScore;
+					//Console.WriteLine("next score: " + nextScore);
+					if (double.IsInfinity(nextScore))
 					{
-						break; // No point in going further
+						finalScore = finalScore / Math.Pow(10, 154) * subScore;
+						scoreAdjustments[i] = scoreAdjustments[i] + 1;
+					}
+					else if (nextScore == 0)
+					{
+						finalScore = finalScore * Math.Pow(10, 154) * subScore;
+						scoreAdjustments[i] = scoreAdjustments[i] - 1;
+					}
+					else
+					{
+						finalScore = nextScore;
 					}
 				}
 
 				scores.Add(results[i].Name, finalScore * 0.5);
+			}
+
+			// Normalize all scores by maximum score adjustment
+			int maximumScoreAdjustment = scoreAdjustments.Max();
+			List<string> scoreNames = scores.Keys.ToList();
+			for (int i = 0; i < scores.Count; i++)
+			{
+				for (int j = scoreAdjustments[i]; j < maximumScoreAdjustment; j++)
+				{
+					scores[scoreNames[i]] /= Math.Pow(10, 154);
+				}
 			}
 
 			double maxOne = scores.Max(c => c.Value);

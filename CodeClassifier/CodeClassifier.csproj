@@ -64,12 +64,6 @@
     <WCFMetadata Include="Service References\" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\NaiveBayesClassifier\NaiveBayesClassifier.csproj">
-      <Project>{bd4c8de9-353a-4efc-a434-2c7085e736e7}</Project>
-      <Name>NaiveBayesClassifier</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <EmbeddedResource Include="training-set\ruby\artifactory.rb">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </EmbeddedResource>
