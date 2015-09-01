@@ -45,7 +45,7 @@ namespace Test
 		{
 			if (string.IsNullOrWhiteSpace(InputString))
 			{
-				MessageBox.Show("Please enter a code sniplet before continueing.");
+				MessageBox.Show("Please enter a code snippet before continuing.");
 				return;
 			}
 
