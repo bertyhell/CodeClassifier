@@ -260,6 +260,7 @@ namespace CodeClassifier
                 if (keyValuePair.Value > maxScore)
                 {
                     bestMatchLanguage = keyValuePair.Key;
+                    maxScore = keyValuePair.Value;
                 }
             }
             return bestMatchLanguage;

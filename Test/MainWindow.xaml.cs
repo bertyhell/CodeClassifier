@@ -45,7 +45,7 @@ namespace Test
 		{
 			if (string.IsNullOrWhiteSpace(InputString))
 			{
-				MessageBox.Show("Please enter a code sniplet before continueing.");
+				MessageBox.Show("Please enter a code snippet before continuing.");
 				return;
 			}
 
@@ -75,7 +75,7 @@ namespace Test
 		protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
 		{
 			PropertyChangedEventHandler handler = PropertyChanged;
-		    handler?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+		    handler.Invoke(this, new PropertyChangedEventArgs(propertyName));
 		}
 	}
 }
